@@ -1,0 +1,71 @@
+<mxfile host="Electron" modified="2023-05-28T16:23:43.062Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.165 Electron/24.2.0 Safari/537.36" etag="0WOQwpny4B2f26_0dvJb" version="21.2.8" type="device">
+  <diagram name="Página-1" id="-IKHYxOmnzbP7nUeCUDP">
+    <mxGraphModel dx="592" dy="347" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--1" target="FEBbaCCuU7iQaD9Rzd5--4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--1" target="FEBbaCCuU7iQaD9Rzd5--5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--1" target="FEBbaCCuU7iQaD9Rzd5--3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--1" value="ESP32" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="280" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--40" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--2" target="FEBbaCCuU7iQaD9Rzd5--1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="250" />
+              <mxPoint x="420" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--44" value="MQTT, HTTP" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="FEBbaCCuU7iQaD9Rzd5--40">
+          <mxGeometry x="0.18" y="-1" relative="1" as="geometry">
+            <mxPoint x="41" y="-5" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--2" value="Aplicação Flask" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--3" value="Bomba hidráulica" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="440" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--4" value="Relé da lâmpada" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="280" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--5" value="Cooler" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="360" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="310" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="340" y="390" />
+              <mxPoint x="340" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--6" value="Sensor de umidade" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="360" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--8" target="FEBbaCCuU7iQaD9Rzd5--1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--8" value="Sensor de umidade e temperatura" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="280" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="FEBbaCCuU7iQaD9Rzd5--9" target="FEBbaCCuU7iQaD9Rzd5--1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FEBbaCCuU7iQaD9Rzd5--9" value="Sensor ToF" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="440" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
