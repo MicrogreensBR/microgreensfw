@@ -5,7 +5,7 @@
  * @version 0.1
  * @date 2023-05-23
  *
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2023 MicrogreensBR
  *
  */
 
@@ -15,9 +15,8 @@
 typedef enum
 {
     th_stma,
-    th_wifi,
-    th_http,
-    th_mqtt,
+    th_hum_sens,
+    th_temp_sens,
 
     th_size,
 } task_handles_t;

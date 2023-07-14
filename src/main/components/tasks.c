@@ -5,7 +5,7 @@
  * @version 0.1
  * @date 2023-05-23
  *
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2023 MicrogreensBR
  *
  */
 
@@ -17,15 +17,17 @@
 
 #include "tasks.h"
 #include "stma.h"
-#include "wifi.h"
+#include "my_wifi.h"
 #include "http.h"
+#include "my_mqtt.h"
+#include "hum_sensor.h"
+#include "temp_sensor.h"
 
 TaskHandle_t tasks_handles[th_size];
 
 void Tasks__CreateAll(void)
 {
-    // memset(tasks_handles, NULL, th_size * sizeof(tasks_handles));
-    xTaskCreate(Wifi__Task, "Wifi__Task", 4096, NULL, 10, &tasks_handles[th_wifi]);
-    xTaskCreate(Http__Task, "Http__Task", 4096, NULL, 10, &tasks_handles[th_http]);
-    vTaskResume(tasks_handles[th_wifi]);
+    xTaskCreate(Stma__Task, "Stma__Task", 1024 * 64, NULL, 10, &tasks_handles[th_stma]);
+    xTaskCreate(HumSensor__Task, "HumSensor__Task", 1024 * 4, NULL, 10, &tasks_handles[th_hum_sens]);
+    xTaskCreate(TempSensor__Task, "TempSensor__Task", 1024 * 4, NULL, 10, &tasks_handles[th_temp_sens]);
 }
