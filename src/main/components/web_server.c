@@ -5,7 +5,7 @@
  * @version 0.1
  * @date 2023-05-07
  *
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2023 MicrogreensBR
  *
  */
 
@@ -30,7 +30,7 @@
 #include <lwip/api.h>
 #include <lwip/netdb.h>
 
-#include "wifi.h"
+#include "my_wifi.h"
 
 char web_page[] = "<!DOCTYPE html><html lang=\"pt-BR\"> <head> <meta charset=\"UTF-8\" /> <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" /> <title>Babygreens web page</title> </head> <body style=\"padding: 20px\"> <h1>Conecte o Babygreens à internet</h1> <form action=\"/\" method=\"post\"> <label for=\"ssid\">SSID:</label> <br /> <input style=\"margin-bottom: 20px\" type=\"text\" id=\"ssid\" name=\"ssid\" /> <br /> <label for=\"pwd\">Senha:</label> <br /> <input style=\"margin-bottom: 20px\" type=\"password\" id=\"pwd\" name=\"pwd\" /> <br /> <button type=\"submit\">Conectar</button> </form> </body></html>";
 

@@ -5,10 +5,12 @@
  * @version 0.1
  * @date 2023-04-19
  *
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2023 MicrogreensBR
  *
  */
 
+#include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -21,35 +23,36 @@
 #include "nvs_flash.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "nvs.h"
+#include "esp_sntp.h"
+#include "sntp.h"
+#include "esp_system.h"
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "wifi.h"
+#include "my_wifi.h"
 #include "wifi_prm.h"
+#include "http.h"
+#include "my_mqtt.h"
 #include "tasks.h"
-
-/* The event group allows multiple bits for each event, but we only care about two events:
- * - we are connected to the AP with an IP
- * - we failed to connect after the maximum amount of retries */
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT BIT1
+#include "stma.h"
 
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
 #define ESP_WIFI_SAE_MODE WPA3_SAE_PWE_UNSPECIFIED
 #define H2E_IDENTIFIER ""
 
-/* The examples use WiFi configuration that you can set via project configuration menu.
-
-   If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
-*/
-
 static const char *TAG = "wifi";
 static int retry_num = 0;
 static EventGroupHandle_t s_wifi_event_group; /* FreeRTOS event group to signal when we are connected */
 
-wifi_status_t wifi_status;
+wifi_status_t wifi_status = wifi_uninitialized;
+
+uint8_t first_conn_since_boot = 1;
+uint8_t http_initialized = 0;
+uint8_t mqtt_initialized = 0;
+
+struct timeval tv_now;
 
 wifi_config_t wifi_config_ap = {
     .ap = {
@@ -64,9 +67,9 @@ wifi_config_t wifi_config_ap = {
 #else /* CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT */
         .authmode = WIFI_AUTH_WPA2_PSK,
 #endif
-        .pmf_cfg = {
-            .required = true,
-        },
+        // .pmf_cfg = {
+        //     .required = true,
+        // },
     },
 };
 
@@ -94,8 +97,116 @@ static void evt_handler(void *arg, esp_event_base_t event_base,
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
     {
         ESP_LOGI(TAG, "Connected to the AP");
+        nvs_handle_t my_handle;
+        int32_t first_conn = 1;
+        esp_err_t ret = nvs_open("storage", NVS_READWRITE, &my_handle);
+        if (ret != ESP_OK)
+        {
+            printf("Error (%s) opening NVS handle!\n", esp_err_to_name(ret));
+        }
+        else
+        {
+            printf("Done\n");
+
+            // Read
+            printf("Checking if first connection has already been made ... ");
+            ret = nvs_get_i32(my_handle, "first_conn", &first_conn);
+            switch (ret)
+            {
+            case ESP_OK:
+                printf("first_conn=%" PRId32 "\n", first_conn);
+                break;
+            case ESP_ERR_NVS_NOT_FOUND:
+                printf("The value is not initialized yet, itintializing it right now...\n");
+                // Write
+                printf("Writing first connection (1) to NVS");
+                ret = nvs_set_i32(my_handle, "first_conn", first_conn);
+                if (ret != ESP_OK)
+                {
+                    printf("Failed with code %d!\n", ret);
+                }
+                printf("Done\n");
+
+                // Commit written value.
+                // After setting any values, nvs_commit() must be called to ensure changes are written
+                // to flash storage. Implementations may write to storage at other times,
+                // but this is not guaranteed.
+                printf("Committing updates in NVS ... ");
+                ret = nvs_commit(my_handle);
+                printf((ret != ESP_OK) ? "Failed!\n" : "Done\n");
+                break;
+            default:
+                printf("Error (%s) reading!\n", esp_err_to_name(ret));
+                esp_restart();
+            }
+        }
+        if (first_conn_since_boot)
+        {
+            vTaskDelay(pdMS_TO_TICKS(DELAY_AFTER_CONNECT_MS));
+            first_conn_since_boot = 0;
+            esp_err_t ret;
+            uint8_t retry = 0;
+
+            if (first_conn)
+            {
+                do
+                {
+                    if (retry > 5)
+                    {
+                        ESP_LOGE(TAG, "HTTP failed to initialize multiple times");
+                        break;
+                    }
+                    ret = Http__Initialize();
+                    retry++;
+                    vTaskDelay(pdMS_TO_TICKS(HTTP_MQTT_INIT_RETRY_DELAY_MS));
+                } while (ret != ESP_OK);
+
+                if (ret == ESP_OK)
+                {
+                    printf("Writing first connection (0) to NVS");
+                    first_conn = 0;
+                    ret = nvs_set_i32(my_handle, "first_conn", first_conn);
+                    if (ret != ESP_OK)
+                    {
+                        printf("Failed with code %d!\n", ret);
+                    }
+                    printf("Done\n");
+                }
+            }
+
+            do
+            {
+                if (retry > 5)
+                {
+                    ESP_LOGE(TAG, "MQTT failed to initialize multiple times");
+                    break;
+                }
+                ret = Mqtt__Initialize();
+                retry++;
+                vTaskDelay(pdMS_TO_TICKS(HTTP_MQTT_INIT_RETRY_DELAY_MS));
+            } while (ret != ESP_OK);
+
+            if (ret == ESP_OK)
+                mqtt_initialized = 1;
+
+            if ((http_initialized && mqtt_initialized) ||
+                (mqtt_initialized && !first_conn))
+            // if (mqtt_initialized)
+            {
+                ESP_LOGI(TAG, "communication protocols initialized");
+                st_next = st_working;
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Error initializing communication protocols");
+                st_next = st_broken;
+            }
+            vTaskResume(tasks_handles[th_stma]);
+        }
+
+        // Close
+        nvs_close(my_handle);
         wifi_status = wifi_connected;
-        vTaskResume(tasks_handles[th_wifi]);
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
@@ -109,17 +220,15 @@ static void evt_handler(void *arg, esp_event_base_t event_base,
         else
         {
             ESP_LOGW(TAG, "Exceeded maximum # of attempts to connect to AP");
-            wifi_status = wifi_idle;
             retry_num = 0;
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
+        wifi_status = wifi_disconnected;
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
     else if (event_id == WIFI_EVENT_AP_STACONNECTED)
     {
@@ -137,27 +246,63 @@ static void evt_handler(void *arg, esp_event_base_t event_base,
 
 void Wifi__ChangeWiFi(char *ssid, char *pwd)
 {
-    ESP_LOGI(TAG, "Changing WiFi configuration, new ssid = %s, new pwd = %s", ssid, pwd);
-    // wifi_config_t wifi_config = {
-    //     .sta = {
-    //         /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
-    //          * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
-    //          * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
-    //          * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
-    //          */
-    //         .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
-    //     },
-    // };
-    memcpy(wifi_config_sta.sta.ssid, ssid, strlen(ssid));
-    memcpy(wifi_config_sta.sta.password, pwd, strlen(pwd));
+    esp_wifi_stop();
+    // esp_wifi_deauth_sta(0);
+    strcpy((char *)&wifi_config_sta.sta.ssid, ssid);
+    strcpy((char *)&wifi_config_sta.sta.password, pwd);
+
+    nvs_handle_t my_handle;
+    esp_err_t ret = nvs_open("storage", NVS_READWRITE, &my_handle);
+    if (ret != ESP_OK)
+    {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(ret));
+    }
+    else
+    {
+        printf("Done\n");
+
+        // Read
+        printf("Writing ssid to NVS ... ");
+
+        ret = (nvs_set_str(my_handle, "ssid", ssid));
+        switch (ret)
+        {
+        case ESP_OK:
+            printf("success");
+            break;
+        default:
+            printf("Error (%s) writing!\n", esp_err_to_name(ret));
+            break;
+        }
+
+        printf("Writing pwd to NVS ... ");
+
+        ret = (nvs_set_str(my_handle, "pwd", pwd));
+        switch (ret)
+        {
+        case ESP_OK:
+            printf("success");
+            break;
+        default:
+            printf("Error (%s) writing!\n", esp_err_to_name(ret));
+            break;
+        }
+
+        // Close
+        nvs_close(my_handle);
+    }
+    // memcpy(wifi_config_sta.sta.ssid, ssid, strlen(ssid));
+    // memcpy(wifi_config_sta.sta.password, pwd, strlen(pwd));
+    ESP_LOGI(TAG, "Changing WiFi configuration, new ssid = %s, new pwd = %s", wifi_config_sta.sta.ssid, wifi_config_sta.sta.password);
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config_sta));
     retry_num = 0;
+    esp_wifi_start();
     esp_wifi_connect();
 }
 
 esp_err_t Wifi__Initialize(void)
 {
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_APSTA");
 
     s_wifi_event_group = xEventGroupCreate();
 
@@ -185,58 +330,68 @@ esp_err_t Wifi__Initialize(void)
                                                             &instance_got_ip),
                         TAG, "esp_event_handler_instance_register failed");
 
+    nvs_handle_t my_handle;
+    esp_err_t ret = nvs_open("storage", NVS_READWRITE, &my_handle);
+    char ssid[64] = {0};
+    char pwd[64] = {0};
+    if (ret != ESP_OK)
+    {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(ret));
+    }
+    else
+    {
+        printf("Done\n");
+
+        // Read
+        printf("Reading ssid from NVS ... ");
+        size_t *ssid_len;
+        size_t *pwd_len;
+        ret = (nvs_get_str(my_handle, "ssid", ssid, &ssid_len));
+        switch (ret)
+        {
+        case ESP_OK:
+            printf("Done\n");
+            printf("ssid=%s\n", ssid);
+
+            // Read
+            printf("Reading pwd from NVS ... ");
+            ret = (nvs_get_str(my_handle, "pwd", pwd, &pwd_len));
+            switch (ret)
+            {
+            case ESP_OK:
+                printf("Done\n");
+                printf("pwd=%s\n", pwd);
+                if (ssid_len && pwd_len)
+                {
+                    strcpy(&wifi_config_sta.sta.ssid, ssid);
+                    strcpy(&wifi_config_sta.sta.password, pwd);
+                }
+                break;
+            case ESP_ERR_NVS_NOT_FOUND:
+                printf("The value is not initialized yet!\n");
+                break;
+            default:
+                printf("Error (%s) reading!\n", esp_err_to_name(ret));
+                esp_restart();
+            }
+            break;
+        case ESP_ERR_NVS_NOT_FOUND:
+            printf("The value is not initialized yet!\n");
+            break;
+        default:
+            printf("Error (%s) reading!\n", esp_err_to_name(ret));
+            esp_restart();
+        }
+
+        // Close
+        nvs_close(my_handle);
+    }
+
     ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_APSTA), TAG, "esp_wifi_set_mode failed");
     ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_AP, &wifi_config_ap), TAG, "esp_wifi_set_config failed");
     ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &wifi_config_sta), TAG, "esp_wifi_set_config failed");
-    ESP_RETURN_ON_ERROR(esp_wifi_start(), TAG, "wsp_wifi_start failed");
+    ESP_RETURN_ON_ERROR(esp_wifi_start(), TAG, "esp_wifi_start failed");
 
-    ESP_LOGI(TAG, "Wifi__Initialize finished.");
+    ESP_LOGI(TAG, "WiFi initialized");
     return ESP_OK;
-}
-
-void Wifi__Task(void *arg)
-{
-    vTaskSuspend(NULL);
-    TickType_t last_wake_time;
-    last_wake_time = xTaskGetTickCount();
-    wifi_status = wifi_uninitialized;
-    while (1)
-    {
-        switch (wifi_status)
-        {
-        case wifi_uninitialized:
-            ESP_LOGI(TAG, "Initializing WiFi");
-            if (Wifi__Initialize() != ESP_OK)
-            {
-                ESP_LOGE(TAG, "Error initializing WiFi");
-                wifi_status = wifi_idle;
-            }
-            else
-            {
-                wifi_status = wifi_waiting;
-            }
-            break;
-
-        case wifi_connected:
-            ESP_LOGI(TAG, "WiFi connected to AP");
-            vTaskResume(tasks_handles[th_mqtt]);
-            vTaskResume(tasks_handles[th_http]);
-            wifi_status = wifi_idle;
-            break;
-
-        case wifi_idle:
-            ESP_LOGI(TAG, "Suspending WiFi task");
-            vTaskSuspend(NULL);
-            break;
-
-        case wifi_waiting:
-            ESP_LOGI(TAG, "WiFi waiting");
-            break;
-
-        default:
-            ESP_LOGI(TAG, "Wrong wifi_status");
-            break;
-        }
-        xTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(WIFI_TASK_DELAY_MS));
-    }
 }
