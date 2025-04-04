@@ -1,57 +1,43 @@
-<!-- Copyright [2023] [MicrogreensBR]
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License. -->
-
 # MicrogreensFW
 
-Repositório principal do firmware do projeto Microgreens da disciplina Projeto em Internet das Coisas (SEL0373).
+Main repository for the firmware of the Microgreens project, developed for the Internet of Things Project course (SEL0373).
 
-## Arquitetura e operação básica do sistema
+## System Architecture and Basic Operation
 
-![Arquitetura do sistema](./imgs/architecture.drawio.png)
+![System Architecture](./imgs/architecture.drawio.png)
 
-### Fluxo do processo
+### Process Flow
 
-1. Usuário acessa a plataforma e seleciona, de uma lista pré-definida, a planta que deseja-se cultivar. A partir desta escolha, a plataforma informa o usuário sobre cuidados básicos com a planta.
-2. Usuário planta as sementes, coloca bandeija sobre estas e informa a plataforma que o processo foi iniciado.
-3. Plataforma envia ao ESP32 os dados sobre o cultivo da planta.
-4. Quando o processo for finalizado, o ESP32 informa a platafora.
-5. A plataforma informa o usuário de que o processo foi finalizado.
-6. Usuário colhe a planta.
+1. The user accesses the platform and selects the plant they want to cultivate from a predefined list. Based on this choice, the platform provides the user with basic plant care instructions.
+2. The user plants the seeds, places the tray on top, and notifies the platform that the process has started.
+3. The platform sends the plant cultivation data to the ESP32.
+4. Once the process is complete, the ESP32 notifies the platform.
+5. The platform informs the user that the process has been completed.
+6. The user harvests the plant.
 
-Caso seja identificado algum problema, o usuário é informado.
+If any issues are detected, the user is notified.
 
-### Processos monitorados e controlados pelo ESP32
+### Processes Monitored and Controlled by the ESP32
 
-- Temperatura (monitorar por sensor e controlar por ventilação)
-- Umidade do solo (monitorar por sensor e controlar por irrigação)
-- Altura da planta (monitoriar por sensor ToF)
-- Iluminação (controlar por LED)
+- **Temperature** (monitored via sensor, controlled via ventilation)
+- **Soil Moisture** (monitored via sensor, controlled via irrigation)
+- **Plant Height** (monitored via ToF sensor)
+- **Lighting** (controlled via LED)
 
-## Placa utilizada
+## Board Used
 
-Confidencial.
+Confidential.
 
-## Materiais
+## Materials
 
-A lista de materiais (exceto pela placa) pode ser visualizada [nesta planilha](https://docs.google.com/spreadsheets/d/1QAQEL1R4-6mjEcpoBJlASzv0y4lyy3VPI9GnsOz3ivg/edit#gid=0).
+The list of materials (excluding the board) can be viewed in [this spreadsheet](https://docs.google.com/spreadsheets/d/1QAQEL1R4-6mjEcpoBJlASzv0y4lyy3VPI9GnsOz3ivg/edit#gid=0).
 
-## Colaboradores
+## Contributors
 
 - Henrique Megid
 - [Henrique Sander Lourenço](https://github.com/hsanderr)
 - Tiago Xavier
 
-## Licença
+## License
 
 Copyright 2023 MicrogreensBR. Released under the [Apache 2.0 license](./LICENSE).
